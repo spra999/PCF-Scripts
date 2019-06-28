@@ -1,0 +1,24 @@
+#! /bin/bash
+
+echo "Please enter space details";
+read m
+  cf orgs > orgs1
+  orgs2=$(sed '1,3d' orgs1)
+  for o in $orgs2
+  do
+     cf target -o $o > /dev/null
+     cf spaces > spaces1
+     spaces2=$(sed '1,3d' spaces1)
+     for s in $spaces2
+     do
+       if [ $m == $s ];
+       then
+        cf target -o $o -s $s > /dev/null
+        c=`cf apps|sed '1,4d'|awk {'print $1'}`
+        echo "Getting Apps details that  in org $o and space $s................";
+        cf apps
+       fi
+     done
+   done
+ echo "##############################################################################################################################################";
+rm -rf orgs1 spaces1

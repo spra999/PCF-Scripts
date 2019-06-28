@@ -1,0 +1,40 @@
+#! /bin/bash
+echo "Please mention the PCF Enviornment you are logging in";
+read env
+
+echo "Please enter your mail address!!!";
+read m
+
+echo "ORG,SPACE,STATUS,INSTANCE,MEMORY,DISKSPACE,URLS" >> Number.csv
+#for t in `cat services`
+#do
+  cf orgs > orgs1
+  orgs2=$(sed '1,3d' orgs1)
+  for o in $orgs2
+  do
+     cf target -o $o > /dev/null
+     cf spaces > spaces1
+     spaces2=$(sed '1,3d' spaces1)
+     for s in $spaces2
+     do
+       cf target -o $o -s $s > /dev/null
+       echo "Checking apps  in org $o and space $s................";
+     #  cf apps
+       c=`cf apps|sed '1,4d'|awk {'print $1'}`
+       for a in $c
+       do
+          status=`cf apps|grep -i $a|awk {'print $2'}
+          instance=`cf apps|grep -i $a|awk {'print $3'}
+          memory=`cf apps|grep -i $a|awk {'print $4'}
+          disk=`cf apps|grep -i $a|awk {'print $5'}
+          urls=`cf apps|grep -i $a|awk {'print $6'}
+                     echo "ORG,SPACE,STATUS,INSTANCE,MEMORY,DISKSPACE,URLS" >> Number.csv
+                     echo "$o,$s,$a,$status,$instance,$memory,$disk,$urls" >> Number.csv
+        done
+     done
+   done
+ echo "##############################################################################################################################################";
+#done
+echo "Please find apps that use corresponding services  $env PCF as per attached"|/bin/mailx -s "Services Information  in $env" -a Number.csv $m
+
+rm -rf orgs1 spaces1 Number.csv

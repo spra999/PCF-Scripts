@@ -1,0 +1,37 @@
+#! /bin/bash
+echo "Please mention the PCF Enviornment you are logging in";
+read p
+
+echo "Please enter your mail address!!!";
+read m
+
+echo "Please enter complete FQDN of PCF your are logging into!!!";
+read env
+
+cd /usr/local/rvm/gems/ruby-2.1.4/wrappers
+./uaac target "$env/uaa" > /dev/null
+
+./uaac token client get token -s token > /dev/null
+
+UAA_ACCESS_TOKEN=$(./uaac context | grep access_token | awk -F ":" '{print$2}' | tr -d ' ')
+
+cert_exp=$(curl -s -kl "$env/api/v0/deployed/certificates?expires_within=24m" -H "Authorization: Bearer $UAA_ACCESS_TOKEN"|jq -r ".certificates")
+
+cert_count=$(echo $cert_exp | jq length)
+
+for ((i=0;i<$cert_count;i++));
+do
+  ind_cert=$(echo $cert_exp| jq ".[$i]")
+  validity=$(echo $ind_cert|jq -r '.valid_until')
+  date1=$(echo "$validity"|cut -d "|" -f 2|sed "s/..........$//g")
+  date2=$(date -d "$date" +'%Y-%m-%d')
+  diff=$(echo $((($(date +%s --date "$date1")-$(date +%s --date "$date2"))/(3600*24))))
+  if [ $diff -le 180 ]; then
+     property_reference=$(echo $ind_cert|jq -r '.property_reference')
+     configurable=$(echo $ind_cert|jq -r '.configurable')
+     echo "$property_reference which is has configurable status as "$configurable" is getting  expired by $validity" >> expirycert.csv
+     echo "Please find Cert Expiry info for $p PCF"|/bin/mailx -s "PCF cert expiry notification for $p PCF" -a expirycert.csv $m
+  fi
+ rm -rf expirycert.csv
+done
+

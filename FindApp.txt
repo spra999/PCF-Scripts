@@ -1,0 +1,35 @@
+#! /bin/bash
+
+echo "Please enter API details";
+read api
+echo "Please enter user";
+read u
+echo "Please enter password";
+read p
+
+$api -u $u -p $p > /dev/null
+
+echo "Please enter App details";
+read m
+  cf orgs > orgs1
+  orgs2=$(sed '1,3d' orgs1)
+  for o in $orgs2
+  do
+     cf target -o $o > /dev/null
+     cf spaces > spaces1
+     spaces2=$(sed '1,3d' spaces1)
+     for s in $spaces2
+     do
+        cf target -o $o -s $s > /dev/null
+        c=`cf apps|sed '1,4d'|awk {'print $1'}`
+       for a in $c
+       do
+        if [ $m == $a ]
+        then
+         echo "App $a can be found in org $o and space $s................";
+        fi
+       done
+     done
+   done
+ echo "##############################################################################################################################################";
+rm -rf orgs1 spaces1

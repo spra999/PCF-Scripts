@@ -1,0 +1,42 @@
+##################################################################################################################################################################
+#This script will fetch list of apps using services in particular ORG and SPACE
+#The "services" file should be populated with list of services we want to test and it should be on same directory along with this script
+#This script is written by sriram prattipati
+###################################################################################################################################################################
+echo "Please mention the PCF Enviornment you are logging in";
+read env
+
+echo "Please enter your mail address!!!";
+read m
+for t in `cat services1`
+do
+  cf orgs > orgs1
+  orgs2=$(sed '1,3d' orgs1)
+  for o in $orgs2
+  do
+     cf target -o $o > /dev/null
+     cf spaces > spaces1
+     spaces2=$(sed '1,3d' spaces1)
+     for s in $spaces2
+     do
+       cf target -o $o -s $s > /dev/null
+       echo "Checking apps that use "$t" service in org $o and space $s................";
+       c=`cf apps|sed '1,4d'|awk {'print $1'}`
+       for a in $c
+       do
+         cf env $a|grep -i $t > /dev/null
+         v=$(echo $?)
+         if [ $v -eq 0 ];
+         then
+            p=$(cf services|grep -i $t|grep -i $a|awk '{print $1}')
+            #echo "$p"
+            echo "$a,$o,$s,$p,$t " >> Number.csv
+         fi
+       done
+     done
+   done
+ echo "##############################################################################################################################################";
+done
+echo "Please find apps that use corresponding services $env PCF as per attached"|/bin/mailx -s "Services Information  in $env" -a Number.csv $m
+
+rm -rf orgs1 spaces1 Number.csv

@@ -1,0 +1,30 @@
+#! /bin/bash
+
+echo "Please mention the PCF Enviornment you are logging in";
+read env
+
+echo "Please enter your mail address!!!";
+read m
+
+cf buildpacks|awk '{print $1}' > listbuildpacks
+c=$(sed '1,3d' listbuildpacks|wc -l)
+
+for ((i=1;i<=$c;i++))
+do
+  echo "$i"|cf buildpack-usage > 1.txt
+  echo Checking for offline buildpack  $(cat 1.txt|grep -i Checking|awk '{print $6}').....
+  b=$(cat 1.txt|grep -i Checking|awk '{print $6}')
+  buildpack=$(echo $b|tr 'a-z' 'A-Z')
+  echo "$buildpack" >> offlinebuildpacks.txt
+  echo "         " >> offlinebuildpacks.txt
+  cat 1.txt|grep -n Checking|awk '{print $1}' > linenumber.txt
+  n=$(cut -c -2 linenumber.txt)
+  k=$(expr $n + 4)
+  sed -n "$k",'$p' 1.txt >> offlinebuildpacks.txt
+  echo "#######################################################################################################################" >> offlinebuildpacks.txt
+  echo "#######################################################################################################################" >> offlinebuildpacks.txt
+  rm -rf 1.txt linenumber.txt buildpack listbuildpacks
+done
+
+echo "Please find the info of offline Buildpacks in  $env PCF as per attached"|/bin/mailx -s "Offline BuildPacks Information  in $env" -a offlinebuildpacks.txt $m
+rm -rf offlinebuildpacks.txt
